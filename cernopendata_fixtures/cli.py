@@ -21,13 +21,17 @@
 
 from __future__ import absolute_import, print_function
 
+import glob
+import os
+
 import click
+import pkg_resources
 from flask import current_app
 from flask.cli import with_appcontext
 from sqlalchemy.orm.attributes import flag_modified
 
 
-@click.group()
+@click.group(chain=True)
 def fixtures():
     """Automate site bootstrap process and testing."""
 
@@ -58,6 +62,26 @@ def collections():
 
 @fixtures.command()
 @with_appcontext
+def records():
+    """Load demo records."""
+    from dojson.contrib.marc21.utils import load
+    from dojson.contrib.marc21.model import marc21
+    from invenio_db import db
+    from invenio_records import Record
+
+    data = pkg_resources.resource_filename('cernopendata_fixtures', 'data')
+    files = list(glob.glob(os.path.join(data, '*.xml')))
+    files += list(glob.glob(os.path.join(data, '*', '*.xml')))
+
+    for filename in files:
+        with open(filename, 'rb') as source:
+            for record in load(source):
+                click.echo(Record.create(record).id)
+    db.session.commit()
+
+
+@fixtures.command()
+@with_appcontext
 def pids():
     """Fetch and register PIDs."""
     from invenio_db import db
@@ -67,12 +91,13 @@ def pids():
         PersistentIdentifierError
     from invenio_pidstore.models import PIDStatus, PersistentIdentifier
     from invenio_pidstore.fetchers import recid_fetcher
+    from invenio_pidstore.minters import recid_minter
     from invenio_records.models import RecordMetadata
 
     with click.progressbar(RecordMetadata.query.all()) as bar:
         for record in bar:
-            pid = recid_fetcher(record.id, record.json)
             try:
+                pid = recid_fetcher(record.id, record.json)
                 found = PersistentIdentifier.get(
                     pid_type=pid.pid_type,
                     pid_value=pid.pid_value,
@@ -87,6 +112,9 @@ def pids():
                         status=PIDStatus.REGISTERED
                     )
                 )
+            except KeyError:
+                click.echo('Skiped: {0}'.format(record.id))
+                continue
 
             pid_value = record.json.get('_oai', {}).get('id')
             if pid_value is None:
