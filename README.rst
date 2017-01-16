@@ -5,8 +5,8 @@
 .. image:: https://img.shields.io/github/tag/cernopendata/cernopendata-fixtures.svg
         :target: https://github.com/cernopendata/cernopendata-fixtures/releases
 
-.. image:: https://img.shields.io/pypi/dm/invenio-base.svg
-        :target: https://pypi.python.org/pypi/invenio-base
+.. image:: https://img.shields.io/pypi/dm/cernopendata-fixtures.svg
+        :target: https://pypi.python.org/pypi/cernopendata-fixtures
 
 .. image:: https://img.shields.io/github/license/cernopendata/cernopendata-fixtures.svg
         :target: https://github.com/cernopendata/cernopendata-fixtures/blob/master/LICENSE
