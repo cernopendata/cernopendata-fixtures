@@ -1,8 +1,10 @@
+include *.rst
 include *.sh
 include *.txt
 include .dockerignore
 include .editorconfig
 include .inveniorc
+include LICENSE
 include cernopendata_fixtures/data/cms/cms-vm-contextualisation-scripts/cernvm-script
 include cernopendata_fixtures/data/cms/cms-vm-contextualisation-scripts/opendata-desktop-settings
 include pytest.ini
