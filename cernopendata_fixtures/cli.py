@@ -89,7 +89,8 @@ def records():
                 record = marc21.do(data)
                 record['$schema'] = schema
                 click.echo(NoCheckRecord.create(record).id)
-    db.session.commit()
+                db.session.commit()
+                db.session.expunge_all()
 
 
 @fixtures.command()
