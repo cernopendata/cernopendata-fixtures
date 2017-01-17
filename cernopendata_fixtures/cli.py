@@ -69,14 +69,26 @@ def records():
     from invenio_db import db
     from invenio_records import Record
 
+    class NoCheckRecord(Record):
+        """Skip record validation."""
+
+        def validate(self):
+            """Ignore schema."""
+            return True
+
+    schema = current_app.extensions['invenio-jsonschemas'].path_to_url(
+        'marc21/bibliographic/bd-v1.0.0.json'
+    )
     data = pkg_resources.resource_filename('cernopendata_fixtures', 'data')
     files = list(glob.glob(os.path.join(data, '*.xml')))
     files += list(glob.glob(os.path.join(data, '*', '*.xml')))
 
     for filename in files:
         with open(filename, 'rb') as source:
-            for record in load(source):
-                click.echo(Record.create(record).id)
+            for data in load(source):
+                record = marc21.do(data)
+                record['$schema'] = schema
+                click.echo(NoCheckRecord.create(record).id)
     db.session.commit()
 
 
@@ -94,8 +106,12 @@ def pids():
     from invenio_pidstore.minters import recid_minter
     from invenio_records.models import RecordMetadata
 
-    with click.progressbar(RecordMetadata.query.all()) as bar:
-        for record in bar:
+    recids = [r.id for r in RecordMetadata.query.all()]
+    db.session.expunge_all()
+
+    with click.progressbar(recids) as bar:
+        for record_id in bar:
+            record = RecordMetadata.query.get(record_id)
             try:
                 pid = recid_fetcher(record.id, record.json)
                 found = PersistentIdentifier.get(
@@ -141,5 +157,5 @@ def pids():
             flag_modified(record, 'json')
             assert record.json['_oai']['id']
             db.session.add(record)
-
-    db.session.commit()
+            db.session.commit()
+            db.session.expunge_all()
