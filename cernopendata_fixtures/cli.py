@@ -23,9 +23,10 @@ from __future__ import absolute_import, print_function
 
 import glob
 import os
-
+import json
 import click
 import pkg_resources
+import uuid
 from flask import current_app
 from flask.cli import with_appcontext
 from sqlalchemy.orm.attributes import flag_modified
@@ -90,6 +91,34 @@ def records():
                 record['$schema'] = schema
                 click.echo(NoCheckRecord.create(record).id)
                 db.session.commit()
+                db.session.expunge_all()
+
+
+@fixtures.command()
+@with_appcontext
+def terms():
+    """Load demo terms records."""
+    from invenio_db import db
+    from invenio_records import Record
+    from invenio_indexer.api import RecordIndexer
+    from cernopendata.modules.records.terms.minters import cernopendata_termid_minter
+
+    indexer = RecordIndexer()
+    schema = current_app.extensions['invenio-jsonschemas'].path_to_url(
+        'records/term-v1.0.0.json'
+    )
+    data = pkg_resources.resource_filename('cernopendata_fixtures', 'data')
+    terms_json = glob.glob(os.path.join(data, 'terms', '*.json'))
+
+    for filename in terms_json :
+        with open(filename, 'rb') as source:
+            for data in json.load(source):
+                id = uuid.uuid4()
+                cernopendata_termid_minter(id, data)
+                record = Record.create(data, id_=id)
+                record['$schema'] = schema
+                db.session.commit()
+                indexer.index(record)
                 db.session.expunge_all()
 
 
