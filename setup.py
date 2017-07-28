@@ -6,6 +6,7 @@ import os
 
 from setuptools import find_packages, setup
 
+
 # Get the version string. Cannot be done with import!
 version = {}
 with open(os.path.join('cernopendata_fixtures',
@@ -44,5 +45,10 @@ setup(
         'invenio-search-ui>=1.0.0a2',
         'invenio-search>=1.0.0a9',
         'invenio-theme>=1.0.0a16',
+    ],
+    tests_require=[
+        'check-manifest>=0.25',
+        'isort>=4.2.2',
+        'pydocstyle>=1.0.0',
     ],
 )
