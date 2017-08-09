@@ -39,8 +39,8 @@ cache:
 env:
   - REQUIREMENTS=lowest
   - REQUIREMENTS=release
-  - REQUIREMENTS=devel-cernopendata
-  - REQUIREMENTS=devel-all
+#  - REQUIREMENTS=devel-cernopendata
+  - REQUIREMENTS=devel
 
 python:
   - "2.7"
@@ -60,5 +60,6 @@ install:
 script:
   - "./run-tests.sh"
 
-after_success:
-  - coveralls
+# Add this when tests are added
+#after_success:
+#  - coveralls

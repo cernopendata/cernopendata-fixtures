@@ -22,11 +22,12 @@
 from __future__ import absolute_import, print_function
 
 import glob
-import os
 import json
+import os
+import uuid
+
 import click
 import pkg_resources
-import uuid
 from flask import current_app
 from flask.cli import with_appcontext
 from sqlalchemy.orm.attributes import flag_modified
@@ -110,7 +111,7 @@ def terms():
     data = pkg_resources.resource_filename('cernopendata_fixtures', 'data')
     terms_json = glob.glob(os.path.join(data, 'terms', '*.json'))
 
-    for filename in terms_json :
+    for filename in terms_json:
         with open(filename, 'rb') as source:
             for data in json.load(source):
                 id = uuid.uuid4()
