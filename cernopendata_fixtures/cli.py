@@ -114,7 +114,7 @@ def terms():
     for filename in terms_json:
         with open(filename, 'rb') as source:
             for data in json.load(source):
-                if not data.get("collections", None) and \
+                if not "collections" in data and \
                    not isinstance(data.get("collections", None), basestring):
                     data["collections"] = []
                 data["collections"].append({"primary": "Terms"})
@@ -146,12 +146,45 @@ def news():
     for filename in articles_json:
         with open(filename, 'rb') as source:
             for data in json.load(source):
-                if not data.get("collections", None) and \
+                if not "collections" in data and \
                    not isinstance(data.get("collections", None), basestring):
                     data["collections"] = []
                 data["collections"].append({"primary": "News"})
                 id = uuid.uuid4()
                 cernopendata_articleid_minter(id, data)
+                record = Record.create(data, id_=id)
+                record['$schema'] = schema
+                db.session.commit()
+                indexer.index(record)
+                db.session.expunge_all()
+
+
+@fixtures.command()
+@with_appcontext
+def data_policies():
+    """Load demo Data Policy records."""
+    from invenio_db import db
+    from invenio_records import Record
+    from invenio_indexer.api import RecordIndexer
+    from invenio_pidstore.errors import PIDDoesNotExistError, \
+        PersistentIdentifierError
+    from invenio_pidstore.models import PIDStatus, PersistentIdentifier
+    from invenio_pidstore.fetchers import recid_fetcher
+    from invenio_pidstore.minters import recid_minter
+    from cernopendata.modules.records.minters.recid import cernopendata_recid_minter
+
+    indexer = RecordIndexer()
+    schema = current_app.extensions['invenio-jsonschemas'].path_to_url(
+        'records/data-policies-v1.0.0.json'
+    )
+    data = pkg_resources.resource_filename('cernopendata_fixtures', 'data')
+    data_policies_json = glob.glob(os.path.join(data, '*.json'))
+
+    for filename in data_policies_json:
+        with open(filename, 'rb') as source:
+            for data in json.load(source):
+                id = uuid.uuid4()
+                cernopendata_recid_minter(id, data)
                 record = Record.create(data, id_=id)
                 record['$schema'] = schema
                 db.session.commit()
