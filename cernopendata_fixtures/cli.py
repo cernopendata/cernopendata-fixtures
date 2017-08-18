@@ -102,7 +102,7 @@ def terms():
     from invenio_db import db
     from invenio_records import Record
     from invenio_indexer.api import RecordIndexer
-    from cernopendata.modules.records.terms.minters import cernopendata_termid_minter
+    from cernopendata.modules.records.minters.termid import cernopendata_termid_minter
 
     indexer = RecordIndexer()
     schema = current_app.extensions['invenio-jsonschemas'].path_to_url(
@@ -114,8 +114,44 @@ def terms():
     for filename in terms_json:
         with open(filename, 'rb') as source:
             for data in json.load(source):
+                if not data.get("collections", None) and \
+                   not isinstance(data.get("collections", None), basestring):
+                    data["collections"] = []
+                data["collections"].append({"primary": "Terms"})
                 id = uuid.uuid4()
                 cernopendata_termid_minter(id, data)
+                record = Record.create(data, id_=id)
+                record['$schema'] = schema
+                db.session.commit()
+                indexer.index(record)
+                db.session.expunge_all()
+
+
+@fixtures.command()
+@with_appcontext
+def news():
+    """Load demo news records."""
+    from invenio_db import db
+    from invenio_records import Record
+    from invenio_indexer.api import RecordIndexer
+    from cernopendata.modules.records.minters.artid import cernopendata_articleid_minter
+
+    indexer = RecordIndexer()
+    schema = current_app.extensions['invenio-jsonschemas'].path_to_url(
+        'records/article-v1.0.0.json'
+    )
+    data = pkg_resources.resource_filename('cernopendata_fixtures', 'data')
+    articles_json = glob.glob(os.path.join(data, 'articles', 'news', '*.json'))
+
+    for filename in articles_json:
+        with open(filename, 'rb') as source:
+            for data in json.load(source):
+                if not data.get("collections", None) and \
+                   not isinstance(data.get("collections", None), basestring):
+                    data["collections"] = []
+                data["collections"].append({"primary": "News"})
+                id = uuid.uuid4()
+                cernopendata_articleid_minter(id, data)
                 record = Record.create(data, id_=id)
                 record['$schema'] = schema
                 db.session.commit()
